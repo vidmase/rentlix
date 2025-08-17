@@ -1,6 +1,8 @@
 import { LoginForm } from "@/components/auth/login-form"
+import { LoginFormSkeleton } from "@/components/auth/login-form-skeleton"
 import Link from "next/link"
 import { Home } from "lucide-react"
+import { Suspense } from "react"
 
 export default function LoginPage() {
   return (
@@ -21,7 +23,9 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-card py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
-          <LoginForm />
+          <Suspense fallback={<LoginFormSkeleton />}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>
