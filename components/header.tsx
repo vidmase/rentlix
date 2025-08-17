@@ -25,6 +25,8 @@ import {
   Coins,
   Sparkles,
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/clients"
+import { useCredits } from "@/hooks/use-credits"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -33,16 +35,56 @@ export function Header() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [user, setUser] = useState<any | null>(null)
+  const [displayName, setDisplayName] = useState<string>("")
 
   const searchRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
   const notificationsRef = useRef<HTMLDivElement>(null)
 
+  // Get real user credits
+  const { credits: userCredits } = useCredits()
+  
   // Mock data
   const unreadCount = 3
   const notificationCount = 5
-  const isLoggedIn = true // Mock login state
-  const userCredits = 47 // Added mock user credits
+
+  // Supabase auth/profile fetch
+  useEffect(() => {
+    const supabase = createClient()
+    const init = async () => {
+      const { data: authData } = await supabase.auth.getUser()
+      const currentUser = authData?.user ?? null
+      setUser(currentUser)
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from("rentlix_users")
+          .select("full_name")
+          .eq("id", currentUser.id)
+          .single()
+        setDisplayName(profile?.full_name || currentUser.email || "Account")
+      } else {
+        setDisplayName("")
+      }
+    }
+    init()
+
+    // Optional: listen to auth state changes
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      init()
+    })
+    return () => {
+      sub.subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setUser(null)
+    setDisplayName("")
+    setIsProfileOpen(false)
+  }
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -187,7 +229,7 @@ export function Header() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-3">
-            {isLoggedIn && (
+            {user && (
               <Link
                 href="/credits"
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-50 border border-orange-200 hover:border-orange-300 transition-all duration-200 hover:bg-orange-100"
@@ -275,7 +317,7 @@ export function Header() {
               )}
             </div>
 
-            {isLoggedIn ? (
+            {user ? (
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -300,8 +342,8 @@ export function Header() {
                           <User className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <p className="font-semibold text-sm">John Doe</p>
-                          <p className="text-xs text-muted-foreground">Premium Member</p>
+                          <p className="font-semibold text-sm">{displayName || "Account"}</p>
+                          <p className="text-xs text-muted-foreground">Member</p>
                         </div>
                       </div>
 
@@ -323,13 +365,6 @@ export function Header() {
 
                       <div className="space-y-1">
                         <Link
-                          href="/account"
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 transition-all duration-200 group"
-                        >
-                          <User className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">My Profile</span>
-                        </Link>
-                        <Link
                           href="/credits"
                           className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 transition-all duration-200 group"
                         >
@@ -344,7 +379,7 @@ export function Header() {
                           <span className="text-sm font-medium">Settings</span>
                         </Link>
                         <hr className="my-2 border-white/20" />
-                        <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 transition-all duration-200 w-full text-left text-red-600">
+                        <button onClick={handleSignOut} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 transition-all duration-200 w-full text-left text-red-600">
                           <X className="h-4 w-4" />
                           <span className="text-sm font-medium">Sign Out</span>
                         </button>
@@ -371,21 +406,6 @@ export function Header() {
               </>
             )}
           </div>
-
-          <button
-            className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <div className="relative w-5 h-5">
-              <Menu
-                className={`h-5 w-5 absolute transition-all duration-300 text-gray-600 ${isMenuOpen ? "rotate-90 opacity-0" : "rotate-0 opacity-100"}`}
-              />
-              <X
-                className={`h-5 w-5 absolute transition-all duration-300 text-gray-600 ${isMenuOpen ? "rotate-0 opacity-100" : "-rotate-90 opacity-0"}`}
-              />
-            </div>
-          </button>
         </div>
 
         <div
@@ -448,15 +468,15 @@ export function Header() {
               </Link>
 
               <div className="flex flex-col space-y-2 pt-4 mt-4 border-t border-white/20">
-                {isLoggedIn ? (
+                {user ? (
                   <div className="px-4">
                     <div className="flex items-center gap-3 mb-4 p-3 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-white/20">
                       <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-md">
                         <User className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold">John Doe</p>
-                        <p className="text-sm text-muted-foreground">Premium Member</p>
+                        <p className="font-semibold">{displayName || "Account"}</p>
+                        <p className="text-sm text-muted-foreground">Member</p>
                       </div>
                     </div>
 
@@ -483,7 +503,7 @@ export function Header() {
                     >
                       My Profile
                     </Button>
-                    <Button
+                    <Button onClick={handleSignOut}
                       variant="ghost"
                       className="w-full text-red-600 hover:bg-red-50 font-medium py-2.5 rounded-xl text-sm"
                     >

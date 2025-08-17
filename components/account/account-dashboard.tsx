@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Crown, CreditCard, User, Bell, Shield } from "lucide-react"
+import { ProfileCompletionForm } from "./profile-completion-form"
 
 export function AccountDashboard() {
   const [currentPlan] = useState("Premium")
@@ -120,22 +121,8 @@ export function AccountDashboard() {
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>Update your personal information and preferences</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">First Name</label>
-                  <input type="text" defaultValue="John" className="w-full p-2 border rounded-md" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Last Name</label>
-                  <input type="text" defaultValue="Doe" className="w-full p-2 border rounded-md" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input type="email" defaultValue="john.doe@example.com" className="w-full p-2 border rounded-md" />
-              </div>
-              <Button>Save Changes</Button>
+            <CardContent>
+              <ProfileCompletionForm />
             </CardContent>
           </Card>
         </TabsContent>

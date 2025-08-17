@@ -3,18 +3,22 @@
 import { useState } from "react"
 import { PostAdForm } from "@/components/ads/post-ad-form"
 import { Header } from "@/components/header"
-import { CreditsValidationModal } from "@/components/credits/credits-validation-modal"
+import { ListingTypeSelector } from "@/components/credits/listing-type-selector"
 import { CreditsDisplay } from "@/components/credits/credits-display"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useCredits } from "@/hooks/use-credits"
 
 export default function PostAdPage() {
   const [showCreditsModal, setShowCreditsModal] = useState(true)
   const [canProceed, setCanProceed] = useState(false)
-  const [userCredits] = useState(45) // This would come from user context/API in real app
+  const [selectedListingType, setSelectedListingType] = useState<"basic" | "featured" | "premium">("basic")
+  const { credits: userCredits, loading: creditsLoading } = useCredits()
 
-  const handleProceed = () => {
+  const handleProceed = (listingType: "basic" | "featured" | "premium") => {
+    console.log('PostAdPage: Proceeding with listing type:', listingType)
+    setSelectedListingType(listingType)
     setShowCreditsModal(false)
     setCanProceed(true)
   }
@@ -26,6 +30,7 @@ export default function PostAdPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {console.log('PostAdPage: Rendering, showCreditsModal:', showCreditsModal, 'canProceed:', canProceed)}
       <Header />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-4xl mx-auto">
@@ -50,7 +55,10 @@ export default function PostAdPage() {
           )}
 
           {canProceed ? (
-            <PostAdForm />
+            <PostAdForm 
+              selectedListingType={selectedListingType}
+              onBack={handleBack}
+            />
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Please validate your credits to continue posting your ad.</p>
@@ -60,12 +68,12 @@ export default function PostAdPage() {
             </div>
           )}
 
-          <CreditsValidationModal
-            isOpen={showCreditsModal}
-            onClose={() => setShowCreditsModal(false)}
-            onProceed={handleProceed}
-            userCredits={userCredits}
-          />
+          {showCreditsModal && (
+            <ListingTypeSelector
+              onSelect={handleProceed}
+              onClose={() => setShowCreditsModal(false)}
+            />
+          )}
         </div>
       </main>
     </div>

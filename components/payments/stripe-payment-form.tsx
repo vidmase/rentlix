@@ -95,7 +95,7 @@ export function StripePaymentForm({ creditPackage, onPaymentSuccess, onCancel }:
             <Label htmlFor="name">Cardholder Name</Label>
             <Input
               id="name"
-              placeholder="John Doe"
+              placeholder="Cardholder name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
             />
@@ -106,7 +106,7 @@ export function StripePaymentForm({ creditPackage, onPaymentSuccess, onCancel }:
             <Input
               id="email"
               type="email"
-              placeholder="john@example.com"
+              placeholder="you@example.com"
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
             />

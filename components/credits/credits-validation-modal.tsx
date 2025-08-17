@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,8 +11,9 @@ import { PurchaseCreditsModal } from "@/components/credits/purchase-credits-moda
 interface CreditsValidationModalProps {
   isOpen: boolean
   onClose: () => void
-  onProceed: () => void
+  onProceed: (listingType: "basic" | "featured" | "premium") => void
   userCredits: number
+  loading?: boolean
 }
 
 const AD_COSTS = {
@@ -33,13 +34,26 @@ const AD_COSTS = {
   },
 }
 
-export function CreditsValidationModal({ isOpen, onClose, onProceed, userCredits }: CreditsValidationModalProps) {
+export function CreditsValidationModal({ isOpen, onClose, onProceed, userCredits, loading = false }: CreditsValidationModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<keyof typeof AD_COSTS>("basic")
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [currentCredits, setCurrentCredits] = useState(userCredits)
 
+  // Update current credits when userCredits prop changes
+  useEffect(() => {
+    setCurrentCredits(userCredits)
+  }, [userCredits])
+
   const selectedCost = AD_COSTS[selectedPlan]
   const hasEnoughCredits = currentCredits >= selectedCost.credits
+  
+  console.log('CreditsModal Debug:', {
+    selectedPlan,
+    selectedCost,
+    currentCredits,
+    hasEnoughCredits,
+    loading
+  })
 
   const handlePurchaseComplete = (credits: number, transactionId: string) => {
     setCurrentCredits((prev) => prev + credits)
@@ -48,12 +62,15 @@ export function CreditsValidationModal({ isOpen, onClose, onProceed, userCredits
 
   return (
     <>
+      {console.log('CreditsModal: Rendering modal, isOpen:', isOpen)}
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Coins className="h-5 w-5 text-primary" />
-              Choose Your Listing Type
+            <DialogTitle>
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-primary" />
+                Choose Your Listing Type
+              </div>
             </DialogTitle>
           </DialogHeader>
 
@@ -83,9 +100,16 @@ export function CreditsValidationModal({ isOpen, onClose, onProceed, userCredits
                   <Card
                     key={key}
                     className={`cursor-pointer transition-all ${
-                      isSelected ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
+                      isSelected ? "ring-2 ring-primary shadow-lg bg-primary/5" : "hover:shadow-md"
                     } ${!canAfford ? "opacity-60" : ""}`}
-                    onClick={() => canAfford && setSelectedPlan(key as keyof typeof AD_COSTS)}
+                    onClick={() => {
+                      if (canAfford) {
+                        console.log('Selected plan:', key, 'Cost:', plan.credits)
+                        setSelectedPlan(key as keyof typeof AD_COSTS)
+                      } else {
+                        console.log('Cannot afford plan:', key, 'Need:', plan.credits, 'Have:', currentCredits)
+                      }
+                    }}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
@@ -136,12 +160,29 @@ export function CreditsValidationModal({ isOpen, onClose, onProceed, userCredits
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
-                {hasEnoughCredits ? (
-                  <Button onClick={onProceed} className="bg-gradient-to-r from-primary to-secondary">
+                <Button 
+                  variant="outline" 
+                  onClick={() => console.log('Test button clicked')}
+                  className="bg-yellow-200"
+                >
+                  Test Button (Always Visible)
+                </Button>
+                {console.log('Button rendering debug:', { selectedPlan, hasEnoughCredits, loading })}
+                {selectedPlan && hasEnoughCredits ? (
+                  <Button 
+                    onClick={() => {
+                      console.log('Proceeding with plan:', selectedPlan, 'Cost:', selectedCost.credits, 'Current credits:', currentCredits)
+                      onProceed(selectedPlan)
+                    }} 
+                    className="bg-gradient-to-r from-primary to-secondary"
+                    disabled={loading}
+                  >
                     Proceed ({selectedCost.credits} credits)
                   </Button>
-                ) : (
+                ) : selectedPlan && !hasEnoughCredits ? (
                   <Button onClick={() => setShowPurchaseModal(true)}>Buy Credits</Button>
+                ) : (
+                  <Button disabled>Select a listing type</Button>
                 )}
               </div>
             </div>

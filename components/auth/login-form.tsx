@@ -3,21 +3,72 @@
 import type React from "react"
 
 import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff } from "lucide-react"
+import Link from "next/link"
+import { createClient } from "@/utils/supabase/clients"
+import { useToast } from "@/hooks/use-toast"
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') || '/account'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // TODO: Implement authentication logic
-    setTimeout(() => setIsLoading(false), 1000)
+    try {
+      const form = e.target as HTMLFormElement
+      const formData = new FormData(form)
+      const email = String(formData.get("email") || "").trim()
+      const password = String(formData.get("password") || "")
+
+      if (!email || !password) {
+        toast({ title: "Missing information", description: "Email and password are required.", variant: "destructive" })
+        setIsLoading(false)
+        return
+      }
+
+      const supabase = createClient()
+      console.log('Attempting login with:', { email, passwordLength: password.length });
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+      console.log('Login response:', { data, error });
+
+      if (error) {
+        console.error('Login error:', error);
+        // Provide user-friendly messages
+        const message =
+          error.message?.toLowerCase().includes("invalid login")
+            ? "Invalid email or password."
+            : error.message?.toLowerCase().includes("email not confirmed")
+            ? "Please verify your email before signing in. Check your inbox for a confirmation link."
+            : error.message?.toLowerCase().includes("user not found")
+            ? "No account found with this email address. Please register first."
+            : error.message || "Unable to sign in."
+
+        toast({ title: "Sign in failed", description: message, variant: "destructive" })
+        setIsLoading(false)
+        return
+      }
+
+      // Success
+      toast({ title: "Signed in", description: "Welcome back!" })
+      router.push(redirectTo)
+      router.refresh() // Refresh to update server-side session
+    } catch (err: any) {
+      toast({ title: "Unexpected error", description: err?.message ?? String(err), variant: "destructive" })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -31,7 +82,7 @@ export function LoginForm() {
           autoComplete="email"
           required
           className="mt-1"
-          placeholder="Enter your email"
+          placeholder="you@example.com"
         />
       </div>
 
@@ -67,14 +118,23 @@ export function LoginForm() {
             Remember me
           </Label>
         </div>
-        <Button variant="link" className="text-sm p-0 h-auto">
+        <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">
           Forgot password?
-        </Button>
+        </Link>
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Signing in..." : "Sign in"}
       </Button>
+
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link href="/register" className="font-medium text-primary hover:text-primary/80">
+            Sign up here
+          </Link>
+        </p>
+      </div>
     </form>
   )
 }

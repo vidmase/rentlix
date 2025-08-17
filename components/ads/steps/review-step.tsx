@@ -16,21 +16,29 @@ interface ReviewStepProps {
   onPrev: () => void
   isFirst: boolean
   isLast: boolean
+  onSubmit?: () => Promise<void>
+  isSubmitting?: boolean
 }
 
-export function ReviewStep({ formData, onPrev }: ReviewStepProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function ReviewStep({ formData, onPrev, onSubmit, isSubmitting = false }: ReviewStepProps) {
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
-
-    // TODO: Implement actual submission logic
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setIsSubmitted(true)
-    }, 2000)
+    console.log('ReviewStep: Form submitted, onSubmit function:', !!onSubmit)
+    
+    if (onSubmit) {
+      try {
+        console.log('ReviewStep: Calling onSubmit function')
+        await onSubmit()
+        console.log('ReviewStep: onSubmit completed successfully')
+        setIsSubmitted(true)
+      } catch (error) {
+        console.error('ReviewStep: Submission error:', error)
+      }
+    } else {
+      console.error('ReviewStep: No onSubmit function provided')
+    }
   }
 
   if (isSubmitted) {

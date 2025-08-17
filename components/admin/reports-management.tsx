@@ -19,7 +19,7 @@ export function ReportsManagement() {
       category: "listing",
       title: "Modern flat in Central London",
       reporter: "user@example.com",
-      reported: "john.doe@example.com",
+      reported: "user.reported@example.com",
       reason: "Contains inappropriate images and misleading information about the property",
       status: "pending",
       priority: "high",

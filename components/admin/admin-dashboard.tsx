@@ -439,8 +439,8 @@ export function AdminDashboard() {
               <div className="space-y-4">
                 {[
                   {
-                    name: "John Smith",
-                    email: "john@example.com",
+                    name: "User One",
+                    email: "user.one@example.com",
                     issue: "Multiple spam reports",
                     joined: "Jan 2024",
                     status: "warning",
